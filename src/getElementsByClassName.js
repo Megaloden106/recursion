@@ -6,7 +6,7 @@
 // But instead we're going to implement it from scratch:
 var getElementsByClassName = function(className) {
   var elementsByClassName = [];
-  var bodyClass = document.body.classList[0];
+  var bodyClass = document.body.classList;
   var childNodes = document.body.childNodes;
 
   var pushElementsFromNodeList = function(nodeList) {
@@ -18,7 +18,7 @@ var getElementsByClassName = function(className) {
   	}
   }
 
-  if (bodyClass === className) {
+  if (bodyClass.contains(className)) {
   	elementsByClassName.push($('body').addClass(className)[0]);
   }
   pushElementsFromNodeList(childNodes);
