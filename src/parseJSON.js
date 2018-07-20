@@ -48,13 +48,40 @@ var parseJSON = function(json) {
       console.log(string)
 
       // check for nested objects
-      var nested = 0;
+      var isNested = false;
       for (var elem of string) {
-        if (elem.includes('{')) {
-          nested++;
+        if (elem.includes('{') || elem.includes('[')) {
+          isNested = true;
         }
       }
-      console.log(nested)
+      if (isNested) {
+      // run nested search
+        var start = 0;
+        var end = string.length;
+        var nestedString = '';
+        for (var i = 0; i < string.length; i++) {
+          if (string[i].includes('{') || string[i].includes('[')) {
+            start = i;
+          }
+        }
+        for (var i = string.length - 1; i >= 0 ; i--) {
+          if (string[i].includes('}') || string[i].includes(']')) {
+            end = i;
+          }
+        }
+        for (var i = start; i <= end; i++) {
+          nestedString += cleanUpElem(string[i]);
+          if (i < end) {
+            nestedString += '":"';
+          }
+        }
+        if (nestedString.includes('{')) {
+          string.splice(start, end - start + 1, parseObj(nestedString));
+        } else {
+          nestedString = nestedString.replace(':', ',')
+          string.splice(start, end - start + 1, parseArray(nestedString));
+        }
+      }
       
       // find prop/val and add to obj
       for (var i = 0; i < string.length; i += 2) {
@@ -69,35 +96,40 @@ var parseJSON = function(json) {
   }
 
   var cleanUpElem = function(string) {
-    var start = 0;
-    var end = string.length;
-    while (string[start] === '"' || string[start] === ' ') {
-      start++;
-    }
-    while ((string[end] === '"' || string[end] === ' ' || string[end] === undefined) && end > start) {
-      end--;
-    }
-    return string.slice(start, end + 1)
+    if(typeof string === 'string') {
+      var start = 0;
+      var end = string.length;
+      while (string[start] === '"' || string[start] === ' ') {
+        start++;
+      }
+      while ((string[end] === '"' || string[end] === ' ' || string[end] === undefined) && end > start) {
+        end--;
+      }
+      string = string.slice(start, end + 1);
+    } 
+    return string;
   }
 
   var cleanUpVal = function(elem) {
-    if (elem === undefined) {
-      elem = '';
-    } else if (elem.includes('true')) {
-      elem = true;
-    } else if (elem.includes('false')) {
-      elem = false;
-    } else if (elem.includes('null')) {
-      elem = null;
-    } else if (elem.search(/[1234567890]/) >= 0) {
-      elem = Number(elem);
-    } 
+    if (typeof elem === 'string') {
+      if (elem === undefined) {
+        elem = '';
+      } else if (elem.includes('true')) {
+        elem = true;
+      } else if (elem.includes('false')) {
+        elem = false;
+      } else if (elem.includes('null')) {
+        elem = null;
+      } else if (elem.search(/[1234567890]/) >= 0) {
+        elem = Number(elem);
+      } 
+    }
     return elem;
   }
 
-  if (json.split('[').length > 1) {
+  if (json.indexOf('[') < json.indexOf('{') && json.includes('[') || !json.includes('{')) {
     parsed = parseArray(json);
-  } else if (json.split(/[{}]/).length > 1) {
+  } else {
     parsed = parseObj(json);
   }
 
