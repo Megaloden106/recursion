@@ -10,13 +10,23 @@ var parseJSON = function(json) {
     return elem.length > 0;
   }
 
-  var parseArray = function(str) {
+  var parseArray = function(string) {
     var array = [];
-    var separators = ['", "', '", ', ', "', ', ', ',', '"'];
-    var elems = str.slice(1, -1);
-    if (elems.length > 0) {
-      elems = elems.split(new RegExp(separators.join('|'),'g')).filter(iterator);
-      for (var elem of elems) {
+
+    // get rid of array brackets
+    string = string.slice(1, -1);
+
+    // check for emply array
+    if (string.length > 0) {
+
+      // separate by , and clean up entries
+      string = string.split(',').map(cleanUpElem);
+
+      // check for nested objects or arrays
+      string = nestedObjOrArray(string);
+
+      // add to output array
+      for (var elem of string) {
         array.push(cleanUpVal(elem));
       }
     }
@@ -32,9 +42,8 @@ var parseJSON = function(json) {
 
     // check for empty object
     if (string.length > 0) {
-      // separate by :
-      string = string.split(':');
-      string = string.map(cleanUpElem);
+      // separate by : and clean up entries
+      string = string.split(':').map(cleanUpElem);
 
       // split for additional prop in object
       for (var i = 0; i < string.length; i++) {
@@ -45,56 +54,67 @@ var parseJSON = function(json) {
           i++;
         }
       }
-      console.log(string)
 
-      // check for nested objects
-      var isNested = false;
-      for (var elem of string) {
-        if (elem.includes('{') || elem.includes('[')) {
-          isNested = true;
-        }
-      }
-      if (isNested) {
-      // run nested search
-        var start = 0;
-        var end = string.length;
-        var nestedString = '';
-        for (var i = 0; i < string.length; i++) {
-          if (string[i].includes('{') || string[i].includes('[')) {
-            start = i;
-          }
-        }
-        for (var i = string.length - 1; i >= 0 ; i--) {
-          if (string[i].includes('}') || string[i].includes(']')) {
-            end = i;
-          }
-        }
-        for (var i = start; i <= end; i++) {
-          nestedString += cleanUpElem(string[i]);
-          if (i < end) {
-            nestedString += '":"';
-          }
-        }
-        if (nestedString.includes('{')) {
-          string.splice(start, end - start + 1, parseObj(nestedString));
-        } else {
-          nestedString = nestedString.replace(':', ',')
-          string.splice(start, end - start + 1, parseArray(nestedString));
-        }
-      }
+      // check for nested objects or arrays
+      string = nestedObjOrArray(string);
       
       // find prop/val and add to obj
       for (var i = 0; i < string.length; i += 2) {
-        prop = cleanUpElem(string[i])
+        prop = cleanUpElem(string[i]);
         val = cleanUpVal(cleanUpElem(string[i+1]));
         obj[prop] = val;
       }
-
     }
-
     return obj;
   }
 
+  var nestedObjOrArray = function(string) {
+    var nestedElems = 0;
+    for (var elem of string) {
+      if (elem.includes('{') || elem.includes('[')) {
+        nestedElems++;
+      }
+    }
+
+    while (nestedElems > 0) {
+      // run nested search
+      var start = 0;
+      var end = string.length;
+      var nestedString = '';
+
+      // find start and end
+      for (var i = 0; i < string.length; i++) {
+        if (typeof string[i] !== 'object' && (string[i].includes('{') || string[i].includes('['))) {
+          start = i;
+        }
+      }
+      for (var i = 0; i < string.length ; i++) {
+        if (typeof string[i] !== 'object' && (string[i].includes('}') || string[i].includes(']'))) {
+          end = i;
+        }
+      }
+
+      // concat start to end entries into a new string
+      for (var i = start; i <= end; i++) {
+        nestedString += cleanUpElem(string[i]);
+        if (i < end) {
+          nestedString += '":"';
+        }
+      }
+
+      // run new sting into the object or array parser
+      if (nestedString.includes('{')) {
+        string.splice(start, end - start + 1, parseObj(nestedString));
+      } else {
+        nestedString = nestedString.replace(':', ',')
+        string.splice(start, end - start + 1, parseArray(nestedString));
+      }
+      nestedElems--;
+    }
+    return string;
+  }
+
+  // clean up elems from all the splits
   var cleanUpElem = function(string) {
     if(typeof string === 'string') {
       var start = 0;
@@ -110,6 +130,7 @@ var parseJSON = function(json) {
     return string;
   }
 
+  // clean up values that are non-string
   var cleanUpVal = function(elem) {
     if (typeof elem === 'string') {
       if (elem === undefined) {
