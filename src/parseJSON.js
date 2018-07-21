@@ -10,15 +10,43 @@ var parseJSON = function(json) {
     console.log('arr-- ' + json)
     var arr = [];
 
+    // seperate elems by ,
+    json = json.split(',').map(cleanElem);
+    console.log(json)
+
+    // populate array
+    if (json.length > 1) {
+      for (var elem of json) {
+        arr.push(getVal(elem));
+      }
+    }
+
     return arr;
   }
   
   var parseObj = function(json) {
     console.log('obj-- ' + json)
     var obj = {};
+    var prop, val;
 
-    json = json.split(':').map(cleanElem);
-    console.log(json)
+    // seperate prop and val by ":
+    json = json.split('":').map(cleanElem);
+    console.log('1-- ' + json)
+
+    // seperate prop and val sets by ,
+    for (var i = 1; i < json.length; i++) {
+      if (json[i].includes(',')) {
+        
+      }
+    }
+    console.log('2-- ' + json)
+
+    // populate the object
+    if (json.length > 1) {
+      for (var i = 0; i < json.length; i += 2) {
+        obj[json[i]] = getVal(json[i + 1]);
+      }
+    }
 
     return obj;
   }
@@ -46,11 +74,13 @@ var parseJSON = function(json) {
   }
 
   var cleanElem = function(elem) {
-    var seperators = ['{', '}', '"', '[', ']'];
-    console.log(elem)
-    return elem.split('').filter(function(char) {
-      return char.includes(new RegExp(seperators.join('|') + 'g'));
-    }).join('');
+    // console.log('bef- ' + elem)
+    if (typeof elem === 'string') {
+      // remove starting brackets and quots
+      elem = elem.split(/^{"|"}$|^\s"|^\["|"$|"]$/g).join('');
+    }
+    // console.log('aft- ' + elem)
+    return elem;
   }
 
   var removeBackslash = function(elem) {
