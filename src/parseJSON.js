@@ -14,16 +14,15 @@ var parseJSON = function(json) {
     var elems = json.slice(1, -1).split(',').map(cleanElem);
     console.log(elems)
 
-    // check for nested elem
-    elems = checkNesting(elems);
-
     // populate array
     if (elems.length > 1) {
+      // check for nested elem
+      elems = checkNesting(elems);
+
       for (var elem of elems) {
-        elems.push(getVal(elem));
+        arr.push(getVal(elem));
       }
     }
-
     return arr;
   }
   
@@ -51,20 +50,20 @@ var parseJSON = function(json) {
         obj[propsAndVals[i]] = getVal(propsAndVals[i + 1]);
       }
     }
-
     return obj;
   }
 
   var checkNesting = function(array) {
     console.log('nest- ' + array)
-    var brackCount = 0;
+    var totalNests = findCurrLevNests(array);
+
+    // search for corresponding brackets
 
     // search for open bracks
     for (var i = 0; i < json.length; i++) {
       
     }
-
-    return json;
+    return array;
   }
 
   var getVal = function(value) {
@@ -97,13 +96,13 @@ var parseJSON = function(json) {
   }
 
   var removeBackslash = function(elem) {
-    // chars = elem.split('')
+    chars = elem.split('')
     for (var i = 0; i < chars.length; i++) {
       if (chars[i] === '\\') {
         chars.splice(i, 1);
       }
     }
-    // return chars.join('');
+    return chars.join('');
   }
 
   var findPropValPair = function(json) {
@@ -116,6 +115,38 @@ var parseJSON = function(json) {
       }
     }
     return json.map(cleanElem);
+  }
+
+  var findCurrLevNests = function(array) {
+    var nestCount = 0;
+    var totalNests = 0;
+    var nestJSON = '';
+    var open = '';
+    var close = '';
+    var isOpen = false;
+
+    // check for nested arrays or objects at this current level
+    for (var char of String(array)) {
+      if (char.search(/{|\[/g) >= 0 && !isOpen) {
+        open = char;
+        if (open = '{') {
+          close = '}';
+        } else {
+          close = ']';          
+        }
+        nestCount = 1;
+        isOpen = true;
+      } else if (char === open) {
+        nestCount++;
+      } else if (char === close) {
+        nestCount--;
+      }
+      if (nestCount === 0 && isOpen && char === close) {
+        totalNests++;
+        isOpen = false;
+      }
+    }
+    return totalNests;
   }
 
   if (json.indexOf('[') < json.indexOf('{') && json.includes('[') || !json.includes('{')) {
