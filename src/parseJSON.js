@@ -11,13 +11,16 @@ var parseJSON = function(json) {
     var arr = [];
 
     // seperate elems by ,
-    json = json.slice(1, -1).split(',').map(cleanElem);
-    console.log(json)
+    var elems = json.slice(1, -1).split(',').map(cleanElem);
+    console.log(elems)
+
+    // check for nested elem
+    elems = checkNesting(elems);
 
     // populate array
-    if (json.length > 1) {
-      for (var elem of json) {
-        arr.push(getVal(elem));
+    if (elems.length > 1) {
+      for (var elem of elems) {
+        elems.push(getVal(elem));
       }
     }
 
@@ -30,25 +33,38 @@ var parseJSON = function(json) {
     var prop, val;
 
     // seperate prop and val by ":
-    json = json.slice(1, -1).split('":').map(cleanElem);
+    var propsAndVals = json.slice(1, -1).split('":').map(cleanElem);
 
-    if (json.length > 1) {
+    if (propsAndVals.length > 1) {
       // seperate prop and val sets by ,
-      json = findPropValPair(json);
+      propsAndVals = findPropValPair(propsAndVals);
       console.log('1--')
-      console.log(json)
+      console.log(propsAndVals)
+
+      // check for nested elem
+      propsAndVals = checkNesting(propsAndVals);
+      console.log('2--')
+      console.log(propsAndVals)
 
       // populate the object
-      for (var i = 0; i < json.length; i += 2) {
-        obj[json[i]] = getVal(json[i + 1]);
+      for (var i = 0; i < propsAndVals.length; i += 2) {
+        obj[propsAndVals[i]] = getVal(propsAndVals[i + 1]);
       }
     }
 
     return obj;
   }
 
-  var findNesting = function(objOrArray) {
-    console.log('nest- ' + objOrArray)
+  var checkNesting = function(array) {
+    console.log('nest- ' + array)
+    var brackCount = 0;
+
+    // search for open bracks
+    for (var i = 0; i < json.length; i++) {
+      
+    }
+
+    return json;
   }
 
   var getVal = function(value) {
