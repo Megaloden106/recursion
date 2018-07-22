@@ -3,10 +3,10 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-  // console.log('--- ' + json)
+  console.log('--- ' + json)
 
   var parseArray = function(json) {
-    // console.log('arr-- ' + json)
+    console.log('arr-- ' + json)
     var arr = [];
 
     // remove bracket
@@ -31,23 +31,25 @@ var parseJSON = function(json) {
   }
   
   var parseObj = function(json) {
-    // console.log('obj-- ' + json)
+    console.log('obj-- ' + json)
     var obj = {};
     var prop, val;
 
     // seperate prop and val by ":
-    propsAndVals = json.trim().slice(1, -1).split(':').map(cleanElem);
+    var propsAndVals = json.trim().slice(1, -1).split(/":|"\s:/g);
+      console.log('0--')
+      console.log(propsAndVals)
 
     if (propsAndVals.length > 1) {
       // seperate prop and val sets by ,
       propsAndVals = findPropValPair(propsAndVals);
-      // console.log('1--')
-      // console.log(propsAndVals)
+      console.log('1--')
+      console.log(propsAndVals)
 
       // check for nested elem
-      propsAndVals = checkNesting(propsAndVals);
-      // console.log('2--')
-      // console.log(propsAndVals)
+      propsAndVals = checkNesting(propsAndVals).map(cleanElem);
+      console.log('2--')
+      console.log(propsAndVals)
 
       // populate the object
       for (var i = 0; i < propsAndVals.length; i += 2) {
@@ -58,9 +60,8 @@ var parseJSON = function(json) {
   }
 
   var checkNesting = function(array) {
-    // console.log('nest- ' + array)
     var totalNests = findCurrLevNests(array);
-    // console.log('tn- ' + totalNests);
+    console.log('nest- ' + array + '/ tn- ' + totalNests)
 
     while (totalNests > 0) {
       var range = findNestIndices(array);
@@ -125,15 +126,26 @@ var parseJSON = function(json) {
   }
 
   var findPropValPair = function(json) {
+    console.log('---- ' + json)
+
     for (var i = 1; i < json.length; i++) {
-      var commaIdx = json[i].indexOf(',');
-      var quotIdx = json[i].lastIndexOf('"');
-      if (quotIdx > commaIdx && commaIdx > 0){
-        json.splice(i, 1, json[i].slice(0, commaIdx), json[i].slice(commaIdx + 1));
-        i++;
+      var isInQuots = false;
+      var isFound = false;
+      console.log('bef---- ' + json[i])
+      for (var j = 0; j < json[i].length; j++) {
+        if (json[i][j] === '\"' || json[i][j] === '\'') {
+          isInQuots = !isInQuots;
+        }
+        if (!isInQuots && json[i][j] === ',' && !isFound) {
+          json.splice(i, 1, json[i].slice(0, j), json[i].slice(j + 1));
+          console.log('aft1---- ' + json[i])
+          console.log('aft2---- ' + json[i+1])
+          i++;
+          isFound = true;
+        }
       }
     }
-    return json.map(cleanElem);
+    return json;
   }
 
   var findCurrLevNests = function(array) {
@@ -208,7 +220,7 @@ var parseJSON = function(json) {
     for (var i = range.start; i <= range.end; i++) {
       nestedJSON += array[i];
       if (range.bracket === '{' && i < range.end) {
-        nestedJSON += ':';
+        nestedJSON += '":';
       } else if (range.bracket === '[' && i < range.end) {
         nestedJSON += ',';
       }
