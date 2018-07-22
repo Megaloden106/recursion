@@ -37,13 +37,13 @@ var parseJSON = function(json) {
     if (propsAndVals.length > 1) {
       // seperate prop and val sets by ,
       propsAndVals = findPropValPair(propsAndVals);
-      console.log('1--')
-      console.log(propsAndVals)
+      // console.log('1--')
+      // console.log(propsAndVals)
 
       // check for nested elem
       propsAndVals = checkNesting(propsAndVals);
-      console.log('2--')
-      console.log(propsAndVals)
+      // console.log('2--')
+      // console.log(propsAndVals)
 
       // populate the object
       for (var i = 0; i < propsAndVals.length; i += 2) {
@@ -56,12 +56,21 @@ var parseJSON = function(json) {
   var checkNesting = function(array) {
     console.log('nest- ' + array)
     var totalNests = findCurrLevNests(array);
+    console.log('tn- ' + totalNests);
 
-    // search for corresponding brackets
+    while (totalNests > 0) {
+      var range = findNestIndices(array);
+      console.log(range);
+      var nestedJSON = concatNestedJSON(range, array);
+      console.log('njs- ' + nestedJSON);
 
-    // search for open bracks
-    for (var i = 0; i < json.length; i++) {
-      
+      if (range.bracket === '{') {
+        array.splice(range.start, range.end - range.start + 1, parseObj(nestedJSON));
+      } else {
+        array.splice(range.start, range.end - range.start + 1, parseArray(nestedJSON));
+      }
+
+      totalNests--;
     }
     return array;
   }
@@ -89,7 +98,7 @@ var parseJSON = function(json) {
     // console.log('bef- ' + elem)
     if (typeof elem === 'string') {
       // remove starting brackets and quots
-      elem = elem.split(/^"|"$|^\s"/g).join('');
+      elem = elem.split(/^"|"$|^\s"|^\s/g).join('');
     }
     // console.log('aft- ' + elem)
     return elem;
@@ -120,16 +129,16 @@ var parseJSON = function(json) {
   var findCurrLevNests = function(array) {
     var nestCount = 0;
     var totalNests = 0;
-    var nestJSON = '';
     var open = '';
     var close = '';
     var isOpen = false;
+    // console.log('-')
 
     // check for nested arrays or objects at this current level
     for (var char of String(array)) {
-      if (char.search(/{|\[/g) >= 0 && !isOpen) {
+      if (char.search(/{|\[/g) === 0 && !isOpen) {
         open = char;
-        if (open = '{') {
+        if (open === '{') {
           close = '}';
         } else {
           close = ']';          
@@ -147,6 +156,53 @@ var parseJSON = function(json) {
       }
     }
     return totalNests;
+  }
+
+  var findNestIndices = function(array) {
+    var nestCount = 0;
+    var open = '';
+    var close = '';
+    var foundCurrNest = false;
+    var start = 0;
+    var end = 0;
+    for (var i = 0; i < array.length; i++) {
+      if (typeof array[i] !== 'object') {
+        for (var char of array[i]) {
+          if (char.search(/{|\[/g) === 0 && open.length === 0) {
+            open = char;
+            if (open === '{') {
+              close = '}';
+            } else {
+              close = ']';          
+            }
+            nestCount = 1;
+            start = i;
+          } else if (char === open) {
+            nestCount++;
+          } else if (char === close) {
+            nestCount--;
+          }
+          if (nestCount === 0 && open.length === 1 && !foundCurrNest) {
+            end = i;
+            foundCurrNest = true;
+          }
+        }
+      }
+    }
+    return {start, end, bracket: open};
+  }
+
+  var concatNestedJSON = function(range, array) {
+    var nestedJSON = '';
+    for (var i = range.start; i <= range.end; i++) {
+      nestedJSON += array[i];
+      if (range.bracket === '{' && i < range.end) {
+        nestedJSON += '\":\"';
+      } else if (range.bracket === '[' && i < range.end) {
+        nestedJSON += '\",\"';
+      }
+    }
+    return nestedJSON;
   }
 
   if (json.indexOf('[') < json.indexOf('{') && json.includes('[') || !json.includes('{')) {
