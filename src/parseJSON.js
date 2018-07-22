@@ -3,19 +3,23 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-  console.log('--- ' + json)
-  var parsed;
+  // console.log('--- ' + json)
 
   var parseArray = function(json) {
-    console.log('arr-- ' + json)
+    // console.log('arr-- ' + json)
     var arr = [];
 
-    // seperate elems by ,
-    var elems = json.slice(1, -1).split(',').map(cleanElem);
-    console.log(elems)
+    // remove bracket
+    json = removeSpaces(json).slice(1, -1);
+    // console.log(json)
 
     // populate array
-    if (elems.length > 1) {
+    if (json.length > 0) {
+
+      // seperate elems by ,
+      var elems = json.split(',').map(cleanElem);
+      // console.log(elems)
+
       // check for nested elem
       elems = checkNesting(elems);
 
@@ -27,12 +31,12 @@ var parseJSON = function(json) {
   }
   
   var parseObj = function(json) {
-    console.log('obj-- ' + json)
+    // console.log('obj-- ' + json)
     var obj = {};
     var prop, val;
 
     // seperate prop and val by ":
-    var propsAndVals = json.slice(1, -1).split('":').map(cleanElem);
+    var propsAndVals = removeSpaces(json).slice(1, -1).split(':').map(cleanElem);
 
     if (propsAndVals.length > 1) {
       // seperate prop and val sets by ,
@@ -54,15 +58,15 @@ var parseJSON = function(json) {
   }
 
   var checkNesting = function(array) {
-    console.log('nest- ' + array)
+    // console.log('nest- ' + array)
     var totalNests = findCurrLevNests(array);
-    console.log('tn- ' + totalNests);
+    // console.log('tn- ' + totalNests);
 
     while (totalNests > 0) {
       var range = findNestIndices(array);
-      console.log(range);
+      // console.log(range);
       var nestedJSON = concatNestedJSON(range, array);
-      console.log('njs- ' + nestedJSON);
+      // console.log('njs- ' + nestedJSON);
 
       if (range.bracket === '{') {
         array.splice(range.start, range.end - range.start + 1, parseObj(nestedJSON));
@@ -76,6 +80,7 @@ var parseJSON = function(json) {
   }
 
   var getVal = function(value) {
+    // console.log('v- ' + value)
     if (typeof value === 'string') {
       if (value === undefined) {
         value = '';
@@ -85,8 +90,10 @@ var parseJSON = function(json) {
         value = false;
       } else if (value.includes('null')) {
         value = null;
-      } else if (value.search(/\d/) >= 0 && Number(value) !== NaN) {
+      } else if (value.search(/\d/g) >= 0 && !isNaN(Number(value))) {
         value = Number(value);
+      } else if (value.search(/\d/g) >= 0 && isNaN(Number(value))) {
+        value = value.split(/^"|"$/g).join('');
       } else if (value.includes('\\')) {
         value = removeBackslash(value);
       }
@@ -98,10 +105,24 @@ var parseJSON = function(json) {
     // console.log('bef- ' + elem)
     if (typeof elem === 'string') {
       // remove starting brackets and quots
-      elem = elem.split(/^"|"$|^\s"|^\s/g).join('');
+      elem = elem.trim();
+      if (elem.search(/^"\d|\d"$/g) < 0) {
+        elem = elem.split(/^"|"$|"\s$/g).join('');
+      }
     }
     // console.log('aft- ' + elem)
     return elem;
+  }
+
+  var removeSpaces = function(json) {
+    // remove spaces
+    while (json[json.length - 1] === ' ') {
+      json = json.slice(0, -1);
+    }
+    while (json[0] === ' ') {
+      json = json.slice(1);
+    }
+    return json
   }
 
   var removeBackslash = function(elem) {
@@ -133,6 +154,7 @@ var parseJSON = function(json) {
     var close = '';
     var isOpen = false;
     // console.log('-')
+    // console.log(array)
 
     // check for nested arrays or objects at this current level
     for (var char of String(array)) {
@@ -197,14 +219,15 @@ var parseJSON = function(json) {
     for (var i = range.start; i <= range.end; i++) {
       nestedJSON += array[i];
       if (range.bracket === '{' && i < range.end) {
-        nestedJSON += '\":\"';
+        nestedJSON += ':';
       } else if (range.bracket === '[' && i < range.end) {
-        nestedJSON += '\",\"';
+        nestedJSON += ',';
       }
     }
     return nestedJSON;
   }
 
+  var parsed;
   if (json.indexOf('[') < json.indexOf('{') && json.includes('[') || !json.includes('{')) {
     parsed = parseArray(json);
   } else {
