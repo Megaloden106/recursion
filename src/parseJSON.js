@@ -10,7 +10,7 @@ var parseJSON = function(json) {
     var arr = [];
 
     // remove bracket
-    json = removeSpaces(json).slice(1, -1);
+    json = json.trim().slice(1, -1);
     // console.log(json)
 
     // populate array
@@ -36,7 +36,7 @@ var parseJSON = function(json) {
     var prop, val;
 
     // seperate prop and val by ":
-    var propsAndVals = removeSpaces(json).slice(1, -1).split(':').map(cleanElem);
+    propsAndVals = json.trim().slice(1, -1).split(':').map(cleanElem);
 
     if (propsAndVals.length > 1) {
       // seperate prop and val sets by ,
@@ -112,17 +112,6 @@ var parseJSON = function(json) {
     }
     // console.log('aft- ' + elem)
     return elem;
-  }
-
-  var removeSpaces = function(json) {
-    // remove spaces
-    while (json[json.length - 1] === ' ') {
-      json = json.slice(0, -1);
-    }
-    while (json[0] === ' ') {
-      json = json.slice(1);
-    }
-    return json
   }
 
   var removeBackslash = function(elem) {
