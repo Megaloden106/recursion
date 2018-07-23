@@ -3,26 +3,18 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-  console.log('--- ' + json)
 
   var parseArray = function(json) {
-    console.log('arr-- ' + json)
     var arr = [];
-
     // remove bracket
     json = json.trim().slice(1, -1);
-    // console.log(json)
 
     // populate array
     if (json.length > 0) {
-
       // seperate elems by ,
-      var elems = json.split(',').map(cleanElem);
-      // console.log(elems)
-
+      var elems = json.split(',').map(checkQuotSyntax).map(cleanElem);
       // check for nested elem
       elems = checkNesting(elems);
-
       for (var elem of elems) {
         arr.push(getVal(elem));
       }
@@ -31,26 +23,16 @@ var parseJSON = function(json) {
   }
   
   var parseObj = function(json) {
-    console.log('obj-- ' + json)
     var obj = {};
     var prop, val;
-
     // seperate prop and val by ":
     var propsAndVals = json.trim().slice(1, -1).split(/":|"\s:/g);
-      console.log('0--')
-      console.log(propsAndVals)
 
     if (propsAndVals.length > 1) {
       // seperate prop and val sets by ,
       propsAndVals = findPropValPair(propsAndVals);
-      console.log('1--')
-      console.log(propsAndVals)
-
       // check for nested elem
-      propsAndVals = checkNesting(propsAndVals).map(cleanElem);
-      console.log('2--')
-      console.log(propsAndVals)
-
+      propsAndVals = checkNesting(propsAndVals).map(checkQuotSyntax).map(cleanElem);
       // populate the object
       for (var i = 0; i < propsAndVals.length; i += 2) {
         obj[propsAndVals[i]] = getVal(propsAndVals[i + 1]);
@@ -61,27 +43,21 @@ var parseJSON = function(json) {
 
   var checkNesting = function(array) {
     var totalNests = findCurrLevNests(array);
-    console.log('nest- ' + array + '/ tn- ' + totalNests)
 
     while (totalNests > 0) {
       var range = findNestIndices(array);
-      // console.log(range);
       var nestedJSON = concatNestedJSON(range, array);
-      // console.log('njs- ' + nestedJSON);
-
       if (range.bracket === '{') {
         array.splice(range.start, range.end - range.start + 1, parseObj(nestedJSON));
       } else {
         array.splice(range.start, range.end - range.start + 1, parseArray(nestedJSON));
       }
-
       totalNests--;
     }
     return array;
   }
 
   var getVal = function(value) {
-    // console.log('v- ' + value)
     if (typeof value === 'string') {
       if (value === undefined) {
         value = '';
@@ -103,7 +79,6 @@ var parseJSON = function(json) {
   }
 
   var cleanElem = function(elem) {
-    // console.log('bef- ' + elem)
     if (typeof elem === 'string') {
       // remove starting brackets and quots
       elem = elem.trim();
@@ -111,7 +86,6 @@ var parseJSON = function(json) {
         elem = elem.split(/^"|"$|"\s$/g).join('');
       }
     }
-    // console.log('aft- ' + elem)
     return elem;
   }
 
@@ -126,20 +100,15 @@ var parseJSON = function(json) {
   }
 
   var findPropValPair = function(json) {
-    console.log('---- ' + json)
-
     for (var i = 1; i < json.length; i++) {
       var isInQuots = false;
       var isFound = false;
-      console.log('bef---- ' + json[i])
       for (var j = 0; j < json[i].length; j++) {
         if (json[i][j] === '\"' || json[i][j] === '\'') {
           isInQuots = !isInQuots;
         }
         if (!isInQuots && json[i][j] === ',' && !isFound) {
           json.splice(i, 1, json[i].slice(0, j), json[i].slice(j + 1));
-          console.log('aft1---- ' + json[i])
-          console.log('aft2---- ' + json[i+1])
           i++;
           isFound = true;
         }
@@ -154,9 +123,6 @@ var parseJSON = function(json) {
     var open = '';
     var close = '';
     var isOpen = false;
-    // console.log('-')
-    // console.log(array)
-
     // check for nested arrays or objects at this current level
     for (var char of String(array)) {
       if (char.search(/{|\[/g) === 0 && !isOpen) {
@@ -228,10 +194,21 @@ var parseJSON = function(json) {
     return nestedJSON;
   }
 
+  var checkQuotSyntax = function(elem) {
+    if (typeof elem !== 'object' && elem.search(/\\"$/g) >= 0) {
+      throw SyntaxError('SyntaxError');
+    }
+    return elem;
+  }
+
   var parsed;
-  if (json.indexOf('[') < json.indexOf('{') && json.includes('[') || !json.includes('{')) {
+  var firstChar = json.trim()[0];
+  var lastChar = json.trim()[json.length - 1];
+  if ((firstChar === '[' && lastChar !== ']') || (firstChar !== '[' && lastChar === ']')) {
+    throw SyntaxError('SyntaxError');
+  } else if (json.indexOf('[') < json.indexOf('{') && json.includes('[') || !json.includes('{')) {
     parsed = parseArray(json);
-  } else {
+  } else if (json.indexOf('{') < json.indexOf('[') && json.includes('{') || !json.includes('[')) {
     parsed = parseObj(json);
   }
 
