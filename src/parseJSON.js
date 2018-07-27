@@ -23,7 +23,7 @@ var parseJSON = function(json) {
     return value;
   }
 
-  var concatNests = function(array) {
+  var combineNests = function(array) {
     console.log(array);
     return array;
   }
@@ -45,7 +45,7 @@ var parseJSON = function(json) {
     if ( json.length > 2 ) {
       var props = json.slice(1,-1).split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)|:/g);
       if ( json.slice(1,-1).search(/{|\[/g) >= 0 ) {
-        props = concatNests(props);
+        props = combineNests(props);
       }
       for ( var i = 0; i < props.length; i+=2 ) {
         result[eval(props[i])] = eval(props[i+1]);
