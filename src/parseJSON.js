@@ -16,10 +16,18 @@ var parseJSON = function(json) {
         value = false;
       } else if ( value.search(/\d/g) >= 0 && !isNaN( Number(value) ) ) {
         value = Number(value);
-      } else if ( value.search(/\\/g) >= 0 ) {
-        
       } else {
-        value = value.replace(/^"|"$/g, '');      
+        value = value.replace(/^"|"$/g, '');  
+        if ( value.includes('\\') ) {
+          value = value.split('');
+          for ( var i = 0; i < value.length; i++ ) {
+            console.log(value)
+            if ( value[i] === '\\' ) {
+              value.splice(i,1);
+            }
+          }
+          value = value.join('');
+        }    
       }
     }
     return value;
