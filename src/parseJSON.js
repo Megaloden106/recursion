@@ -3,8 +3,6 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-  console.log('--- ' + json)
-
   var eval = function(value) {
     if ( value && typeof value !== 'object' ) {
       value = value.trim();
@@ -21,7 +19,6 @@ var parseJSON = function(json) {
         if ( value.includes('\\') ) {
           value = value.split('');
           for ( var i = 0; i < value.length; i++ ) {
-            console.log(value)
             if ( value[i] === '\\' ) {
               value.splice(i,1);
             }
@@ -79,6 +76,9 @@ var parseJSON = function(json) {
   }
 
   json = json.trim();
+  if ( json[0] === '[' && json[json.length-1] !== ']' || json[0] === '{' && json[json.length-1] !== '}' ) {
+    throw SyntaxError('SyntaxError');
+  }
   if ( json[0] === '[' ) {
     var result = [];
     if ( json.length > 2 ) {
