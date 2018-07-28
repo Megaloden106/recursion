@@ -75,6 +75,13 @@ var parseJSON = function(json) {
     return result;
   }
 
+  var checkQuotSyntax = function(elem) {
+    if (typeof elem !== 'object' && elem.search(/\\"$/g) >= 0) {
+      throw SyntaxError('SyntaxError');
+    }
+    return elem;
+  }
+
   json = json.trim();
   if ( json[0] === '[' && json[json.length-1] !== ']' || json[0] === '{' && json[json.length-1] !== '}' ) {
     throw SyntaxError('SyntaxError');
@@ -82,7 +89,7 @@ var parseJSON = function(json) {
   if ( json[0] === '[' ) {
     var result = [];
     if ( json.length > 2 ) {
-      var vals = json.slice(1,-1).split(',');
+      var vals = json.slice(1,-1).split(',').map(checkQuotSyntax);
 
       if ( json.slice(1,-1).search(/{|\[/g) >= 0 ) {
         vals = combineNests(vals);
