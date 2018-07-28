@@ -52,7 +52,7 @@ var parseJSON = function(json) {
               }
             }
           }
-          if ( end > 0 ) {
+          if ( end >= 0 ) {
             break;
           }
         }
@@ -76,7 +76,7 @@ var parseJSON = function(json) {
   }
 
   var checkQuotSyntax = function(elem) {
-    if (typeof elem !== 'object' && elem.search(/\\"$/g) >= 0) {
+    if ( elem.search(/\\"$/g) >= 0 ) {
       throw SyntaxError('SyntaxError');
     }
     return elem;
